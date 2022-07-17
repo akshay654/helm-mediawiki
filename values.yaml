@@ -5,9 +5,6 @@ mediawiki:
   admin:
     username: admin
     password: null
-  persistence:
-    storageClass: standard
-    size: 5Gi
   secretkey: null
   upgradekey: null
 
@@ -18,8 +15,11 @@ db:
   mediawikiPassword: null
   name: mediawikidb
   persistence:
+    storageClass: standard
     size: 7Gi
 
 
 enableConfigmap : true
 
+hpa:
+  enabled: false
