@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-mysql
+  labels: &MySQLDeploymentLabels
+    app.kubernetes.io/name: "{{ .Release.Name }}"
+    app.kubernetes.io/component: mediawiki-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *MySQLDeploymentLabels
+  serviceName: {{ .Release.Name }}-mysql-svc
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels: *MySQLDeploymentLabels
+    spec:
+      containers:
+      - image: {{ .Values.db.image }}
+        imagePullPolicy: IfNotPresent
+        name: mysql
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        # A password for root superuser.
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-mysql-secret
+              key: root-password
+        # A database name to be created at startup.
+        - name: MYSQL_DATABASE
+          value: "{{ .Values.db.name }}"
+        # A new user to be created at startup.
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-mysql-secret
+              key: mediawiki-username
+        # A password of the new user created at startup.
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-mysql-secret
+              key: mediawiki-password
+        ports:
+        - name: mysql
+          containerPort: 3306
+        volumeMounts:
+        - name: {{ .Release.Name }}-mysql-pvc
+          mountPath: /var/lib/mysql
+          subPath: "{{ .Values.db.name }}"
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: 15
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: 120
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Release.Name }}-mysql-pvc
+      labels:
+        app.kubernetes.io/name: "{{ .Release.Name }}"
+        app.kubernetes.io/component: mediawiki-mysql
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.db.persistence.storageClass }}
+      resources:
+        requests:
+          storage: "{{ .Values.db.persistence.size }}"

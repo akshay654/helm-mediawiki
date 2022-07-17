@@ -1,0 +1,25 @@
+mediawiki:
+  image:
+    repo: mediawiki
+    tag: latest
+  admin:
+    username: admin
+    password: null
+  persistence:
+    storageClass: standard
+    size: 5Gi
+  secretkey: null
+  upgradekey: null
+
+db:
+  image: mariadb
+  rootPassword: null
+  mediawikiUsername: mediawiki
+  mediawikiPassword: null
+  name: mediawikidb
+  persistence:
+    size: 7Gi
+
+
+enableConfigmap : true
+

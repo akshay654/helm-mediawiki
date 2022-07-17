@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    labels: &MediawikiDeploymentLabels
+      app.kubernetes.io/name: "{{ .Release.Name }}"
+      app.kubernetes.io/component: mediawiki-webserver
+    name: {{ .Release.Name }}-mediawiki
+spec:
+    replicas: 1
+    selector:
+        matchLabels: *MediawikiDeploymentLabels
+    template:
+        metadata:
+            labels: *MediawikiDeploymentLabels
+        spec:
+            containers:
+                - image: "{{ .Values.mediawiki.image.repo }}:{{ .Values.mediawiki.image.tag }}"
+                  imagePullPolicy: IfNotPresent
+                  name: mediawiki
+                  ports:
+                      - containerPort: 80
+                  resources:
+                    requests:
+                      cpu: 100m
+                      memory: 100Mi
+                    limits:
+                      cpu: 1.2
+                      memory: 500Mi
+                  env:
+                    - name: WIKI_NAME 
+                      value: "My Wiki"
+                    - name: WIKI_ADMIN
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-user
+                    - name: DB_NAME
+                      value: "mediawikidb"
+                    - name: DB_SERVER
+                      value: "{{ .Release.Name }}-mysql-svc"
+                    - name: DB_TYPE
+                      value: "mysql"
+                    - name: WIKI_ADMIN_PASS
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-password
+                    - name: DB_PASS
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-db-password
+                    - name: DB_USER
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-db-user
+                    - name: WG_SECRET_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-secret-key
+                    - name: WG_UPGRADE_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: {{ .Release.Name }}-mediawiki-secret
+                          key: mediawiki-upgrade-key
+                  {{- if .Values.enableConfigmap }}
+                  volumeMounts:
+                  - name: mediawiki-custom-config
+                    mountPath: /var/www/html/LocalSettings.php
+                    subPath: LocalSettings.php
+                    readOnly: true
+                  {{- end }}
+            {{- if .Values.enableConfigmap }}
+            volumes:
+            - name: mediawiki-custom-config
+              configMap:
+                name: {{ .Release.Name }}-mediawiki-config
+                items:
+                - key: LocalSettings.php
+                  path: LocalSettings.php
+            {{- end }}
+
+

@@ -1,0 +1,13 @@
+{{- if .Values.enableConfigmap }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mediawiki-config
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: mediawiki-webserver
+data:
+  LocalSettings.php: |
+    {{- tpl (.Files.Get "files/LocalSettings.php") . | nindent 4 -}}
+{{- end -}}
