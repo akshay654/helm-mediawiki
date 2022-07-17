@@ -19,7 +19,21 @@ db:
     size: 7Gi
 
 
-enableConfigmap : true
+enableConfigmap : false
 
 hpa:
   enabled: false
+
+mysql:
+  label: mysql
+  namespace: default
+  replicaCount: 1
+  postInstall:
+    name: post-install-db-privilege
+    image:
+      name: akshay654pawar/post-install-db-privilege
+      tag: 1.0.0
+      pullPolicy: IfNotPresent
+  password: <root_pasword>
+  user: root
+  database: mediawikidb

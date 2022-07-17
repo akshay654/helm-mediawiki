@@ -1,0 +1,4 @@
+#!/bin/bash
+mysql -h${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PASSWORD} << EOF
+GRANT ALL PRIVILEGES ON ${MYSQL_USER}.* TO '${MYSQL_DB}'@'%';
+EOF
